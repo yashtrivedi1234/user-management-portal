@@ -7,17 +7,24 @@ export const api = createApi({
   }),
   endpoints: (builder) => ({
     registerUser: builder.mutation({
-      query: (data) => ({
-        url: "/users",
-        method: "POST",
-        body: {
+      query: (data) => {
+        const body = {
           name: data.name,
           email: data.email,
           password: data.password,
           avatar: data.avatar || "https://i.imgur.com/6VBx3io.png",
           role: "customer",
-        },
-      }),
+        };
+
+        // Debug: log the outgoing request body to trace special-character issues
+        console.log("[API] registerUser body:", body);
+
+        return {
+          url: "/users",
+          method: "POST",
+          body,
+        };
+      },
     }),
     getUser: builder.query({
       query: () => "/users/1",

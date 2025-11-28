@@ -13,7 +13,9 @@ const schema = yup.object().shape({
     .trim()
     .matches(/^[A-Za-z ]+$/, "Name must contain only letters and spaces")
     .required("Name is required"),
+
   email: yup.string().email("Invalid email").required("Email is required"),
+
   password: yup
     .string()
     .min(6, "Password must be at least 6 characters")
@@ -49,11 +51,16 @@ export default function Register() {
         name: formData.name.trim(),
         email: formData.email.trim().toLowerCase(),
         password: formData.password,
-        avatar: "https://i.imgur.com/6VBx3io.png", // Always provide a default avatar URL that's publicly accessible
+        avatar: "https://i.imgur.com/6VBx3io.png",
       };
 
+      // Debug: log form values and prepared body to trace special-character issues
+      console.log("[Register] formData:", formData);
+      console.log("[Register] registrationData:", registrationData);
+
       // Attempt registration with complete data
-      await registerUser(registrationData).unwrap();
+      const response = await registerUser(registrationData).unwrap();
+      console.log("[Register] registerUser response:", response);
 
       // Update Redux store with user details
       const userData = {
@@ -61,6 +68,7 @@ export default function Register() {
         email: formData.email,
         avatar: logoPreview,
       };
+
       console.log("Saving user data:", userData);
       dispatch(setUserDetails(userData));
 
@@ -75,17 +83,29 @@ export default function Register() {
         navigate("/dashboard");
       }, 1500);
     } catch (error) {
-      // Handle specific error cases
-      const errorMessage = error.data?.message
-        ? `Registration failed: ${error.data.message}`
-        : "Registration failed. Please check your details and try again.";
+      // More verbose logging to help find where the special-character password fails
+      console.error("[Registration Error] raw error:", error);
+      // RTK Query errors sometimes include .data or .error fields
+      console.error(
+        "[Registration Error] error.data:",
+        error && error.data ? error.data : null
+      );
+      console.error(
+        "[Registration Error] error.status:",
+        error && error.status ? error.status : null
+      );
+      console.error(
+        "[Registration Error] error.error:",
+        error && error.error ? error.error : null
+      );
 
-      setMessage({
-        type: "error",
-        text: errorMessage,
-      });
+      const errorMessage =
+        error && error.data && error.data.message
+          ? `Registration failed: ${error.data.message}`
+          : (error && error.error) ||
+            "Registration failed. Please check your details and try again.";
 
-      console.error("[Registration Error]:", error);
+      setMessage({ type: "error", text: errorMessage });
     }
   };
 
